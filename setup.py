@@ -2,14 +2,15 @@
 from setuptools import setup
 
 setup(
-    name="OpenPySCADCli",
+    name="SolidPythonCli",
     version="1.0",
     description=(
-        "Quick CLI wrapper for use with openpyscad to make it easier to build/models"
+        "Quick CLI toolchain builder for use with SolidPython to make "
+        "it easier to build/test models"
     ),
     author="Nick Davies",
     author_email="git@nickdavies.com.au",
-    url="https://github.com/nickdavies/openpyscad-cli",
-    py_modules=["openpyscad_cli"],
-    install_requires=["openpyscad"],
+    url="https://github.com/nickdavies/SolidPythonCli",
+    py_modules=["solid_cli"],
+    install_requires=["solidpython"],
 )

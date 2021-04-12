@@ -4,6 +4,8 @@ import subprocess
 import tempfile
 from typing import List
 
+from solid import scad_render, scad_render_to_file
+
 
 class Model:
     @classmethod
@@ -30,14 +32,14 @@ def _openscad_command():
 
 
 def cmd_print(args, model):
-    print(model.dumps())
+    print(scad_render(model))
     return True
 
 
 def cmd_write(args, model):
     if args.print:
-        print(model.dumps())
-    model.dump(args.target_file)
+        print(scad_render(model))
+    scad_render_to_file(args.target_file)
 
     if args.preview:
         subprocess.Popen(
