@@ -1,6 +1,6 @@
+import argparse
 import os
 import subprocess
-import argparse
 import tempfile
 from typing import List
 
@@ -17,7 +17,7 @@ class Model:
         """
         pass
 
-    def build(self):
+    def build(self, args):
         """
         The main logic of your model. This should return something that
         can have .dump or be part of a union etc.
@@ -151,7 +151,7 @@ def main_single(model):
     _add_commands(parser, [model], multi=False)
 
     args = parser.parse_args()
-    return args.cmd(args, args.model().build())
+    return args.cmd(args, args.model().build(args))
 
 
 def main_multi(models: List[Model]):
@@ -161,4 +161,4 @@ def main_multi(models: List[Model]):
     _add_commands(parser, models, multi=True)
 
     args = parser.parse_args()
-    return args.cmd(args, args.model().build())
+    return args.cmd(args, args.model().build(args))
