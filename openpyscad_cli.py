@@ -76,12 +76,8 @@ def cmd_build(args, model):
     return True
 
 
-def _add_model_args(command_parser, models):
-    if len(models) == 1:
-        model = models[0]
-        model.add_additional_args(command_parser)
-        command_parser.set_defaults(model=model)
-    else:
+def _add_model_args(command_parser, models, multi=False):
+    if multi:
         subparsers = command_parser.add_subparsers(
             help="Model", required=True, dest="_model_name"
         )
@@ -89,23 +85,31 @@ def _add_model_args(command_parser, models):
             parser = subparsers.add_parser(model.name())
             model.add_additional_args(parser)
             parser.set_defaults(model=model)
+    elif len(models) == 1:
+        model = models[0]
+        model.add_additional_args(command_parser)
+        command_parser.set_defaults(model=model)
+    else:
+        raise RuntimeError(
+            f"Expected one model because multi is false but found {len(models)}"
+        )
 
 
-def _add_commands(parser, models):
+def _add_commands(parser, models, multi=False):
     subparsers = parser.add_subparsers(help="Command", required=True, dest="cmd_name")
 
     print_parser = subparsers.add_parser(
         "print", help="Build the model and print the scad code to the screen"
     )
     print_parser.set_defaults(cmd=cmd_print)
-    _add_model_args(print_parser, models)
+    _add_model_args(print_parser, models, multi)
 
     write_parser = subparsers.add_parser(
         "write",
         help="Build the model and write the scad to a file",
     )
     write_parser.set_defaults(cmd=cmd_write)
-    _add_model_args(write_parser, models)
+    _add_model_args(write_parser, models, multi)
     write_parser.add_argument(
         "--print", action="store_true", help="Print the code in addition to writing it"
     )
@@ -128,7 +132,7 @@ def _add_commands(parser, models):
         help="Build the model and then compile it to an stl file with openscad",
     )
     build_parser.set_defaults(cmd=cmd_build)
-    _add_model_args(build_parser, models)
+    _add_model_args(build_parser, models, multi)
     build_parser.add_argument(
         "--scad-file",
         help="Write scad to this file (useful for seeing intermediate steps)",
@@ -144,7 +148,7 @@ def main_single(model):
     parser = argparse.ArgumentParser(
         description=f"CLI for working with {model.name()} models"
     )
-    _add_commands(parser, [model])
+    _add_commands(parser, [model], multi=False)
 
     args = parser.parse_args()
     return args.cmd(args, args.model().build())
@@ -154,7 +158,7 @@ def main_multi(models: List[Model]):
     if len(models) == 0:
         raise ValueError("You must provide at least one model for main_multi")
     parser = argparse.ArgumentParser(description="CLI for working with models")
-    _add_commands(parser, models)
+    _add_commands(parser, models, multi=True)
 
     args = parser.parse_args()
-    return args.cmd(args)
+    return args.cmd(args, args.model().build())
