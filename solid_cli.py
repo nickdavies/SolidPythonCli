@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from typing import List
 
-from solid import scad_render, scad_render_to_file
+from solid import OpenSCADObject, scad_render
 
 
 class Model:
@@ -19,10 +19,10 @@ class Model:
         """
         pass
 
-    def build(self, args):
+    def build(self, args) -> OpenSCADObject:
         """
         The main logic of your model. This should return something that
-        can have .dump or be part of a union etc.
+        can have be converted into scan code
         """
         raise NotImplementedError("This must be overwritten")
 
@@ -37,9 +37,12 @@ def cmd_print(args, model):
 
 
 def cmd_write(args, model):
+    code = scad_render(model)
     if args.print:
-        print(scad_render(model))
-    scad_render_to_file(args.target_file)
+        print(code)
+    with args.target_file as f:
+        f.write(code)
+        f.flush()
 
     if args.preview:
         subprocess.Popen(
@@ -64,7 +67,7 @@ def cmd_build(args, model):
 
     path, f = get_file_and_path()
     with f:
-        model.dump(f)
+        f.write(scad_render(model))
         f.flush()
         subprocess.run(
             [
