@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import argparse
+import copy
 import os
 import subprocess
 import tempfile
@@ -6,11 +9,29 @@ from typing import List
 
 from solid import OpenSCADObject, scad_render
 
+POSSIBLE_ARGS = {
+    "cmd",
+    "cmd_name",
+    "print",
+    "preview",
+    "model",
+    "scad_file",
+    "target_file",
+}
 
-class Model:
+
+class Args:
     @classmethod
-    def name(cls) -> str:
-        return cls.__name__
+    def from_argparse(cls, args: argparse.Namespace) -> Args:
+        """
+        This function builds this class from an argument namespace that
+        was parsed from the associated model
+        """
+        args_dict = copy.deepcopy(vars(args))
+        for possible_arg in POSSIBLE_ARGS:
+            args_dict.pop(possible_arg, None)
+
+        return cls(**args_dict)
 
     @classmethod
     def add_additional_args(cls, parser: argparse.ArgumentParser):
@@ -19,7 +40,18 @@ class Model:
         """
         pass
 
-    def build(self, args) -> OpenSCADObject:
+
+class Model:
+
+    # This field is used for controlling additional args
+    # that your model needs.
+    args_cls = None
+
+    @classmethod
+    def name(cls) -> str:
+        return cls.__name__
+
+    def build(self, args: Args) -> OpenSCADObject:
         """
         The main logic of your model. This should return something that
         can have be converted into scan code
@@ -88,11 +120,11 @@ def _add_model_args(command_parser, models, multi=False):
         )
         for model in models:
             parser = subparsers.add_parser(model.name())
-            model.add_additional_args(parser)
+            model.args_cls.add_additional_args(parser)
             parser.set_defaults(model=model)
     elif len(models) == 1:
         model = models[0]
-        model.add_additional_args(command_parser)
+        model.args_cls.add_additional_args(command_parser)
         command_parser.set_defaults(model=model)
     else:
         raise RuntimeError(
@@ -148,6 +180,14 @@ def _add_commands(parser, models, multi=False):
     )
 
 
+def run_model(parser):
+    cli_args = parser.parse_args()
+    model = cli_args.model()
+    model_args = model.args_cls.from_argparse(cli_args)
+    built_model = model.build(model_args)
+    return cli_args.cmd(cli_args, built_model)
+
+
 def main_single(model):
     assert issubclass(model, Model)
     parser = argparse.ArgumentParser(
@@ -155,8 +195,7 @@ def main_single(model):
     )
     _add_commands(parser, [model], multi=False)
 
-    args = parser.parse_args()
-    return args.cmd(args, args.model().build(args))
+    return run_model(parser)
 
 
 def main_multi(models: List[Model]):
@@ -165,5 +204,4 @@ def main_multi(models: List[Model]):
     parser = argparse.ArgumentParser(description="CLI for working with models")
     _add_commands(parser, models, multi=True)
 
-    args = parser.parse_args()
-    return args.cmd(args, args.model().build(args))
+    return run_model(parser)
