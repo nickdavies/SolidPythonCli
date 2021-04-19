@@ -72,9 +72,8 @@ def cmd_write(args, model):
     code = scad_render(model)
     if args.print:
         print(code)
-    with args.target_file as f:
+    with open(args.target_file, "w") as f:
         f.write(code)
-        f.flush()
 
     if args.preview:
         subprocess.Popen(
@@ -161,7 +160,7 @@ def _add_commands(parser, models, multi=False):
     )
     write_parser.add_argument(
         "target_file",
-        type=argparse.FileType("w", encoding="UTF-8"),
+        help="The scad path to output to",
     )
 
     build_parser = subparsers.add_parser(
