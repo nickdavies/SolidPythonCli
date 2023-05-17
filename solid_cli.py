@@ -15,6 +15,7 @@ POSSIBLE_ARGS = {
     "print",
     "preview",
     "model",
+    "_model_name",
     "scad_file",
     "target_file",
 }
@@ -42,7 +43,6 @@ class Args:
 
 
 class Model:
-
     # This field is used for controlling additional args
     # that your model needs.
     args_cls = None
