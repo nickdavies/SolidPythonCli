@@ -20,8 +20,8 @@ Then a basic usage looks like:
 import argparse
 from dataclasses import dataclass
 
-import solid
-import solid.utils
+import solid2
+import solid2.utils
 from solid_cli import Args, Model, main_single
 
 
@@ -29,7 +29,7 @@ from solid_cli import Args, Model, main_single
 class SingleCubeArgs(Args):
     # How large should the cube be
     cube_size: int
-    
+
     @classmethod
     def add_additional_args(cls, parser: argparse.ArgumentParser):
         parser.add_argument(
@@ -38,17 +38,17 @@ class SingleCubeArgs(Args):
             default=3,
             help="How large should the cube be",
         )
-        
+
 class SingleCube(Model):
     """
     An example model which makes a single cube
     """
 
     args_cls = SingleCubeArgs
-    
+
     def build(self, args):    
-        return solid.cube([args.cube_size, args.cube_size, args.cube_size])
-        
+        return solid2.cube([args.cube_size, args.cube_size, args.cube_size])
+
 if __name__ == "__main__":
-    main_single(DeskMountHoles)       
+    main_single(SingleCube)
 ```

@@ -3,11 +3,10 @@ from __future__ import annotations
 import argparse
 import copy
 import os
-import subprocess
 import tempfile
-from typing import List
 
-from solid import OpenSCADObject, scad_render
+from solid2.core.object_base import OpenSCADObject
+from solid2 import scad_render
 
 POSSIBLE_ARGS = {
     "cmd",
@@ -59,11 +58,7 @@ class Model:
         raise NotImplementedError("This must be overwritten")
 
 
-def _openscad_command():
-    pass
-
-
-def cmd_print(args, model):
+def cmd_print(args, model: Model):
     print(scad_render(model))
     return True
 
@@ -197,7 +192,7 @@ def main_single(model):
     return run_model(parser)
 
 
-def main_multi(models: List[Model]):
+def main_multi(models: list[Model]):
     if len(models) == 0:
         raise ValueError("You must provide at least one model for main_multi")
     parser = argparse.ArgumentParser(description="CLI for working with models")
