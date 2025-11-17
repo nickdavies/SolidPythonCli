@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Generic, TypeVar, Self
+from abc import abstractmethod, ABC
 import argparse
 import copy
 import os
@@ -20,9 +22,9 @@ POSSIBLE_ARGS = {
 }
 
 
-class Args:
+class Args(ABC):
     @classmethod
-    def from_argparse(cls, args: argparse.Namespace) -> Args:
+    def from_argparse(cls, args: argparse.Namespace) -> Self:
         """
         This function builds this class from an argument namespace that
         was parsed from the associated model
@@ -34,23 +36,27 @@ class Args:
         return cls(**args_dict)
 
     @classmethod
-    def add_additional_args(cls, parser: argparse.ArgumentParser):
+    def add_additional_args(cls, _parser: argparse.ArgumentParser):
         """
         Hook for any args related to your model specifically
         """
         pass
 
 
-class Model:
+A = TypeVar("A", bound=Args)
+
+
+class Model(Generic[A], ABC):
     # This field is used for controlling additional args
     # that your model needs.
-    args_cls = None
+    args_cls: type[A]
 
     @classmethod
     def name(cls) -> str:
         return cls.__name__
 
-    def build(self, args: Args) -> OpenSCADObject:
+    @abstractmethod
+    def build(self, args: A) -> OpenSCADObject:
         """
         The main logic of your model. This should return something that
         can have be converted into scan code
@@ -58,12 +64,12 @@ class Model:
         raise NotImplementedError("This must be overwritten")
 
 
-def cmd_print(args, model: Model):
+def cmd_print[A: Args](_args: A, model: Model[A]) -> bool:
     print(scad_render(model))
     return True
 
 
-def cmd_write(args, model):
+def cmd_write[A: Args](args: A, model: Model[A]) -> bool:
     code = scad_render(model)
     if args.print:
         print(code)
@@ -82,7 +88,7 @@ def cmd_write(args, model):
     return True
 
 
-def cmd_build(args, model):
+def cmd_build[A: Args](args: A, model: Model[A]) -> bool:
     def get_file_and_path():
         if args.scad_file:
             path = os.path.expandvars(os.path.expanduser(args.scad_file))
@@ -174,7 +180,7 @@ def _add_commands(parser, models, multi=False):
     )
 
 
-def run_model(parser):
+def run_model(parser) -> bool:
     cli_args = parser.parse_args()
     model = cli_args.model()
     model_args = model.args_cls.from_argparse(cli_args)
@@ -182,8 +188,7 @@ def run_model(parser):
     return cli_args.cmd(cli_args, built_model)
 
 
-def main_single(model):
-    assert issubclass(model, Model)
+def main_single[A: Args](model: Model[A]) -> bool:
     parser = argparse.ArgumentParser(
         description=f"CLI for working with {model.name()} models"
     )
@@ -192,7 +197,7 @@ def main_single(model):
     return run_model(parser)
 
 
-def main_multi(models: list[Model]):
+def main_multi[A: Args](models: list[Model[A]]):
     if len(models) == 0:
         raise ValueError("You must provide at least one model for main_multi")
     parser = argparse.ArgumentParser(description="CLI for working with models")
